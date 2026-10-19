@@ -15,7 +15,16 @@ export function applicationOrigin(value:string|undefined,environment:DodoEnviron
  if(url.username||url.password||url.search||url.hash||url.pathname!=='/'||(url.protocol!=='https:'&&!(local&&environment==='test_mode'&&url.protocol==='http:')))throw new Error('Invalid APP_URL.');
  return url.origin;
 }
-export function checkoutConfigured(){return !!(process.env.DODO_PAYMENTS_API_KEY&&process.env.DODO_PAYMENTS_PRODUCT_ID&&process.env.DODO_PAYMENTS_WEBHOOK_KEY&&process.env.SUPABASE_SERVICE_ROLE_KEY&&process.env.APP_URL)}
+export function checkoutConfigurationIssue():string|null{
+ const required=['DODO_PAYMENTS_API_KEY','DODO_PAYMENTS_PRODUCT_ID','DODO_PAYMENTS_WEBHOOK_KEY','SUPABASE_SERVICE_ROLE_KEY','APP_URL'] as const;
+ const missing=required.filter(name=>!process.env[name]?.trim());
+ if(missing.length)return `Checkout setup is not complete. Missing frontend server variables: ${missing.join(', ')}. Set them on the frontend Railway service and redeploy.`;
+ let environment:DodoEnvironment;
+ try{environment=paymentEnvironment(process.env.DODO_PAYMENTS_ENVIRONMENT)}catch{return 'DODO_PAYMENTS_ENVIRONMENT must be exactly test_mode or live_mode on the frontend Railway service. Redeploy after saving.'}
+ try{applicationOrigin(process.env.APP_URL,environment)}catch{return 'APP_URL is invalid. Set it to your frontend HTTPS origin only, without quotes, credentials, a path, query, or fragment, then redeploy the frontend.'}
+ return null;
+}
+export function checkoutConfigured(){return checkoutConfigurationIssue()===null}
 export function checkoutUrl(value:string|null|undefined,environment:DodoEnvironment){
  if(!value)throw new Error('Missing hosted checkout URL.');
  const url=new URL(value),host=environment==='test_mode'?'test.checkout.dodopayments.com':'checkout.dodopayments.com';

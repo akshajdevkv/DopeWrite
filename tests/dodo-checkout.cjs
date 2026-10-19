@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const {paymentEnvironment,applicationOrigin,checkoutUrl,validateOneTimeProduct,createHostedCheckout,CheckoutConfigurationError}=require('../.test-build/checkout/lib/payments/checkout.js');
+const {paymentEnvironment,applicationOrigin,checkoutUrl,validateOneTimeProduct,createHostedCheckout,CheckoutConfigurationError,checkoutConfigurationIssue,checkoutConfigured}=require('../.test-build/checkout/lib/payments/checkout.js');
 const {purchaseStatus}=require('../.test-build/checkout/lib/payments/purchaseStatus.js');
 const {createClient}=require('@supabase/supabase-js');
 const {hasPaidAccess}=require('../.test-build/checkout/lib/payments/access.js');
@@ -25,6 +25,17 @@ const fixed={product_id:'pdt_dopewrite',business_id:'bus_test',is_recurring:fals
  const prior=Object.fromEntries(names.map(n=>[n,process.env[n]]));const priorFetch=global.fetch;
  Object.assign(process.env,{DODO_PAYMENTS_ENVIRONMENT:'test_mode',DODO_PAYMENTS_API_KEY:'test-only',DODO_PAYMENTS_PRODUCT_ID:'pdt_dopewrite',DODO_PAYMENTS_WEBHOOK_KEY:'test-only',SUPABASE_SERVICE_ROLE_KEY:'test-only',DODO_PAYMENTS_BUSINESS_ID:'bus_test',APP_URL:'http://127.0.0.1:3000',NODE_ENV:'development'});
  try{
+  assert.equal(checkoutConfigurationIssue(),null);assert.equal(checkoutConfigured(),true);
+  delete process.env.DODO_PAYMENTS_API_KEY;
+  assert.match(checkoutConfigurationIssue(),/Missing frontend server variables: DODO_PAYMENTS_API_KEY/);assert.equal(checkoutConfigured(),false);
+  process.env.DODO_PAYMENTS_API_KEY='test-only';
+  process.env.APP_URL='https://private-value.example/checkout?secret=never-show';
+  assert.match(checkoutConfigurationIssue(),/APP_URL is invalid/);assert(!checkoutConfigurationIssue().includes('never-show'));assert(!checkoutConfigurationIssue().includes('private-value'));
+  process.env.APP_URL='http://127.0.0.1:3000';
+  process.env.DODO_PAYMENTS_ENVIRONMENT='live';assert.match(checkoutConfigurationIssue(),/DODO_PAYMENTS_ENVIRONMENT must be exactly/);
+  process.env.DODO_PAYMENTS_ENVIRONMENT='live_mode';assert.match(checkoutConfigurationIssue(),/APP_URL is invalid/);
+  process.env.APP_URL='https://dopewrite-frontend-production.up.railway.app/';assert.equal(checkoutConfigurationIssue(),null);
+  process.env.DODO_PAYMENTS_ENVIRONMENT='test_mode';process.env.APP_URL='http://127.0.0.1:3000';
   let calls=0;global.fetch=async(input,init)=>{
    calls++;const url=new URL(typeof input==='string'?input:input.url||String(input));assert.equal(url.origin,'https://test.dodopayments.com');
    if(url.pathname==='/products/pdt_dopewrite')return Response.json(fixed);

@@ -8,8 +8,8 @@ import {supabaseConfigured} from '../lib/supabase/config';
 import {authCallbackMessage} from '../googleAuth';
 import {product} from '../product';
 type Status={configured:boolean;purchased:boolean;environment:'test_mode'|'live_mode';confirmedAt?:string|null};
-export default function CheckoutFlow({configured,environment}:{configured:boolean;environment:'test_mode'|'live_mode'}){
- const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true),[status,setStatus]=useState<Status|null>(null),[checking,setChecking]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[returned,setReturned]=useState(false);
+export default function CheckoutFlow({configured,environment,setupError=null}:{configured:boolean;environment:'test_mode'|'live_mode';setupError?:string|null}){
+ const [user,setUser]=useState<User|null>(null),[loading,setLoading]=useState(true),[status,setStatus]=useState<Status|null>(null),[checking,setChecking]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(setupError||''),[returned,setReturned]=useState(false);
  const submitting=useRef(false);
  const [pollingDone,setPollingDone]=useState(false);
  const statusRequest=useRef<Promise<Status>|null>(null);
