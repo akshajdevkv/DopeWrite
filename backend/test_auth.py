@@ -9,7 +9,7 @@ from backend.main import app
 class SupabaseAuthTests(unittest.TestCase):
     def setUp(self):
         self.client=TestClient(app)
-        self.env=patch.dict(os.environ,{'NEXT_PUBLIC_SUPABASE_URL':'https://project.supabase.co','NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY':'public-test-key','DODO_PAYMENTS_ENVIRONMENT':'test_mode','DODO_PAYMENTS_PRODUCT_ID':'pdt_test','NODE_ENV':'development'})
+        self.env=patch.dict(os.environ,{'SUPABASE_URL':'','SUPABASE_PUBLISHABLE_KEY':'','NEXT_PUBLIC_SUPABASE_URL':'https://project.supabase.co','NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY':'public-test-key','DODO_PAYMENTS_ENVIRONMENT':'test_mode','DODO_PAYMENTS_PRODUCT_ID':'pdt_test','NODE_ENV':'development'})
         self.env.start();self.addCleanup(self.env.stop)
 
     def test_api_rejects_missing_token(self):
@@ -54,6 +54,38 @@ class SupabaseAuthTests(unittest.TestCase):
         with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,side_effect=httpx.ConnectError('offline')):
             response=self.client.post('/api/review',headers={'Authorization':'Bearer any-token'},json={})
         self.assertEqual(response.status_code,503)
+        self.assertEqual(response.json()['code'],'BACKEND_SUPABASE_UNREACHABLE')
+        self.assertEqual(response.json()['stage'],'backend_identity')
+
+    def test_wrong_project_url_is_actionable(self):
+        with patch.dict(os.environ,{'SUPABASE_URL':'https://project.supabase.co/dashboard/project/private'}),patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock) as provider:
+            response=self.client.post('/api/recall-questions',headers={'Authorization':'Bearer valid-token'},json={})
+        self.assertEqual(response.status_code,503)
+        self.assertEqual(response.json()['code'],'BACKEND_SUPABASE_URL_INVALID')
+        self.assertNotIn('private',response.text)
+        provider.assert_not_called()
+
+    def test_auth_provider_error_does_not_expose_payload(self):
+        result=httpx.Response(404,json={'secret':'never-display-provider-payload'})
+        with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=result):
+            response=self.client.post('/api/recall-questions',headers={'Authorization':'Bearer valid-token'},json={})
+        self.assertEqual(response.status_code,503)
+        self.assertEqual(response.json()['code'],'BACKEND_AUTH_PROVIDER_ERROR')
+        self.assertIn('HTTP 404',response.json()['detail'])
+        self.assertNotIn('never-display',response.text)
+
+    def test_non_json_auth_response_is_actionable(self):
+        with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=httpx.Response(200,text='<html>not Supabase</html>')):
+            response=self.client.post('/api/recall-questions',headers={'Authorization':'Bearer valid-token'},json={})
+        self.assertEqual(response.status_code,503)
+        self.assertEqual(response.json()['code'],'BACKEND_SUPABASE_INVALID_RESPONSE')
+
+    def test_backend_specific_variables_take_precedence(self):
+        with patch.dict(os.environ,{'SUPABASE_URL':'https://backend-project.supabase.co','SUPABASE_PUBLISHABLE_KEY':'backend-public-key'}),patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=httpx.Response(401)) as provider:
+            response=self.client.post('/api/recall-questions',headers={'Authorization':'Bearer valid-token'},json={})
+        self.assertEqual(response.status_code,401)
+        self.assertEqual(provider.call_args.args[0],'https://backend-project.supabase.co/auth/v1/user')
+        self.assertEqual(provider.call_args.kwargs['headers']['apikey'],'backend-public-key')
 
     def test_health_remains_public(self):
         self.assertEqual(self.client.get('/health').status_code,200)

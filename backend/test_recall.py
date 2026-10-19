@@ -60,6 +60,7 @@ class RecallTests(unittest.TestCase):
         with patch.dict(os.environ,{},clear=True):
             result=self.client.post('/api/recall-questions',json={'title':'Memory','source':SOURCE})
         self.assertEqual(result.status_code,503)
+        self.assertIn('GROQ_API_KEY on the FastAPI backend',result.json()['detail'])
 
     def test_answer_assessment_is_question_specific(self):
         response=httpx.Response(200,request=httpx.Request('POST','https://example.com'),json={'choices':[{'finish_reason':'stop','message':{'content':json.dumps({'accuracy':100,'coverage':100,'summary':'Correct.','strengths':['Memory identified.'],'missing':[],'incorrect':[]})}}]})

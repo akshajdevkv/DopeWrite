@@ -31,7 +31,7 @@ class QuestionSet(BaseModel):
 async def frame_questions(request: RecallRequest) -> QuestionSet:
     key = os.getenv('GROQ_API_KEY')
     if not key:
-        raise HTTPException(503, 'Add GROQ_API_KEY to backend/.env and restart the backend to generate recall questions.')
+        raise HTTPException(503, 'Flashcard generation needs GROQ_API_KEY on the FastAPI backend service. Set it in the backend environment and redeploy or restart the backend.')
     try:
         async with httpx.AsyncClient(timeout=45) as client:
             response = await client.post('https://api.groq.com/openai/v1/chat/completions',headers={'Authorization':f'Bearer {key}'},json={
