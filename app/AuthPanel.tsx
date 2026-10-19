@@ -1,0 +1,25 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {ArrowRight,BookOpen,Folder,LockKeyhole,Sparkles} from 'lucide-react';
+import {browserSupabase} from './lib/supabase/browser';
+import {cloudError} from './lib/cloud';
+import {googleSignInOptions} from './googleAuth';
+export default function AuthPanel({returnTo}:{returnTo?:'/checkout'}){
+ const [googleBusy,setGoogleBusy]=useState(false);
+ useEffect(()=>{const reset=()=>setGoogleBusy(false);window.addEventListener('pageshow',reset);return()=>window.removeEventListener('pageshow',reset)},[]);
+ const [signup,setSignup]=useState(false),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ async function submit(event:React.FormEvent){event.preventDefault();if(busy||googleBusy)return;setBusy(true);setError('');setMessage('');try{const client=browserSupabase();const result=signup?await client.auth.signUp({email,password,options:{emailRedirectTo:`${window.location.origin}/auth/callback${returnTo?'?next=%2Fcheckout':''}`}}):await client.auth.signInWithPassword({email,password});if(result.error)throw result.error;if(signup&&!result.data.session)setMessage('Check your email to confirm your account, then sign in.')}catch(e){setError(cloudError(e))}finally{setBusy(false)}}
+ async function signInWithGoogle(){
+  if(busy||googleBusy)return;setGoogleBusy(true);setError('');setMessage('');
+  try{
+   const response=await fetch('/api/auth/providers',{cache:'no-store'}),providers=await response.json();
+   if(!response.ok)throw new Error(providers.detail||'Could not check Google sign-in. Please retry.');
+   if(!providers.google)throw new Error('Google sign-in is not enabled yet. Enable Google and add its OAuth client credentials in Supabase → Authentication → Sign In / Providers → Google.');
+   const {data,error}=await browserSupabase().auth.signInWithOAuth(googleSignInOptions(window.location.origin,returnTo));
+   if(error)throw error;
+   if(!data.url)throw new Error('Could not start Google sign-in. Please try again.');
+   window.location.assign(data.url);
+  }catch(e){setError(cloudError(e));setGoogleBusy(false)}
+ }
+ return <main className="auth-screen"><section className="auth-story"><a href="/" className="brand">d<span>DopeWrite.</span></a><div><span className="eyebrow">YOUR KNOWLEDGE, KEPT TOGETHER</span><h1>A workspace for<br/>everything you want<br/>to remember.</h1><p>Your documents, your notes, your next breakthrough.<br/>Pick up exactly where you left off.</p><ul><li><Folder size={19}/> Organize every subject into its own folder</li><li><BookOpen size={19}/> Keep edits, practice, and flashcards together</li><li><LockKeyhole size={19}/> A private library, accessible wherever you learn</li></ul></div><small>A little practice. A lasting impression.</small></section><section className="auth-form-panel"><div className="auth-form-card"><div className="auth-symbol"><Sparkles size={24}/></div><h2>{signup?'Make room for learning.':'Welcome back.'}</h2><p>{signup?'Create your private learning workspace.':'Sign in to open your folders and saved documents.'}</p>{error&&<p className="auth-error" role="alert">{error}</p>}{message&&<p className="auth-message" role="status">{message}</p>}<button type="button" className="google-signin" disabled={busy||googleBusy} onClick={()=>void signInWithGoogle()}><svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.87h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.89-1.74 2.98-4.3 2.98-7.35Z"/><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.42l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.81-1.76-5.6-4.12H3.05v2.59A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.91a6 6 0 0 1 0-3.82V7.5H3.05a10 10 0 0 0 0 9l3.35-2.59Z"/><path fill="#EA4335" d="M12 5.97c1.47 0 2.79.5 3.83 1.5l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.95 5.5l3.35 2.59C7.19 7.73 9.4 5.97 12 5.97Z"/></svg>{googleBusy?'Connecting to Google…':'Continue with Google'}</button><div className="auth-divider"><span/>or continue with email<span/></div><form onSubmit={submit}><label htmlFor="auth-email">Email address</label><input id="auth-email" type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} required disabled={busy||googleBusy} placeholder="you@example.com"/><label htmlFor="auth-password">Password</label><input id="auth-password" type="password" autoComplete={signup?'new-password':'current-password'} minLength={signup?8:1} value={password} onChange={e=>setPassword(e.target.value)} required disabled={busy||googleBusy} placeholder={signup?'At least 8 characters':'Your password'}/><button className="primary" disabled={busy||googleBusy}>{busy?'Please wait…':signup?'Create account':'Sign in'}<ArrowRight size={16}/></button></form><button className="auth-switch" disabled={busy||googleBusy} onClick={()=>{setSignup(v=>!v);setError('');setMessage('')}}>{signup?'Already have an account? Sign in':'New to DopeWrite? Create an account'}</button><small>Files are stored privately in your account.</small></div></section></main>
+}

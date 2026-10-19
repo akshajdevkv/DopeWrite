@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.env*
+!.env.example
+backend/.venv/
+__pycache__/
+
+.test-build/
+*.tsbuildinfo
+
+# Standalone preview repository and its generated deployment archive.
+/sites/dopewrite-landing/
+/sites/*-deploy.tar.gz

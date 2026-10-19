@@ -1,0 +1,37 @@
+/* The same mounted editor expands into a distraction-free dark canvas. */
+.typing-focus-shell .study-body{isolation:auto;overflow:visible}
+.typing-focus-shell .session{overflow:visible}
+.typing-focus-shell>aside{visibility:hidden}
+.study-body .practice-pane.typing-focus-pane{position:fixed;inset:0;z-index:1000;display:block;width:100vw;max-width:none;height:100dvh;margin:0;padding:0;border:0;background:#10141e;color:#e3e9f5;overflow:auto;overscroll-behavior:contain;color-scheme:dark}
+.typing-focus-pane::backdrop{background:#10141e}
+.study-body .typing-focus-pane .normal-practice{position:relative;width:100%;min-height:100%;padding:0 0 44px;margin:0;border:0;background:radial-gradient(ellipse at 50% 0,#1c244033,transparent 60%),#10141e;box-shadow:none}
+.typing-focus-pane .canvas-tools{position:sticky;inset:0 0 auto;z-index:2;display:flex;align-items:center;gap:8px;min-height:65px;padding:12px 28px;background:#121824ed;backdrop-filter:blur(16px);border-bottom:1px solid #2b3446}
+.typing-focus-label{display:flex;align-items:center;gap:10px;margin-right:auto;color:#9daaca;font-size:10px;font-weight:600;letter-spacing:1.8px}
+.typing-focus-label svg{color:#98a6ff}.typing-focus-label i{width:1px;height:13px;background:#3a455e;margin:0 5px}
+.typing-focus-pane .canvas-tools button{height:35px;width:35px;color:#abb8d3;border:1px solid #35415a;background:#1c2536;border-radius:9px}
+.typing-focus-pane .canvas-tools button:hover{background:#2b3650;color:#fff;border-color:#6678b1}
+.typing-focus-pane button:focus-visible,.typing-focus-pane a:focus-visible{outline:2px solid #a6b2ff;outline-offset:3px}
+.study-body .typing-focus-pane .practice-title,.typing-focus-pane .response-practice{width:calc(100% - 72px);max-width:850px;margin-left:auto;margin-right:auto}
+.study-body .typing-focus-pane .practice-title{margin-top:42px;margin-bottom:32px}
+.study-body .typing-focus-pane .practice-title h2{font-size:25px;line-height:1.5;color:#dfe6f7;letter-spacing:-.5px;margin-bottom:12px}
+.study-body .typing-focus-pane .practice-title p{color:#8695b2;font-size:12px;line-height:1.9;margin-bottom:0}
+.study-body .typing-focus-pane .guided-editor{background:transparent;border:0;box-shadow:none;margin-top:0;min-height:max(300px,calc(100dvh - 380px))}
+.study-body .typing-focus-pane .guided-editor .typing-ghost,.study-body .typing-focus-pane .guided-editor .recall-input{min-height:max(300px,calc(100dvh - 380px));padding:0;font:19px/2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1px}
+.study-body .typing-focus-pane .guided-editor .recall-input{color:#d9e3f7;caret-color:#a3b3ff;outline:0;background:transparent}
+.typing-focus-pane .typing-ghost{color:#7786a4}
+.typing-focus-pane .ghost-prefix{color:transparent}
+.typing-focus-pane textarea::selection{background:#445887;color:#fff}
+.study-body .typing-focus-pane .hint-note{color:#8493b0;border-color:#2b3449;padding-top:20px;margin-top:30px;margin-bottom:22px}
+.typing-focus-pane .submit-row>small{color:#8a9bb9}
+.typing-focus-pane .primary{background:linear-gradient(130deg,#7b8af1,#5769d2);border-color:#7d8cec;color:#fff;box-shadow:inset 0 1px 0 #ffffff20,0 4px 20px #0003}
+.typing-focus-pane .primary:hover:not(:disabled){background:linear-gradient(130deg,#8a98ff,#6578e7)}
+.typing-focus-pane .assessment-error{background:#322126;color:#efb4ab;border:1px solid #674349}
+.typing-focus-pane .assessment-result{background:#192235;border-color:#35435e;color:#dae4f8}
+.typing-focus-pane .assessment-result .eyebrow{color:#a5b4f5}
+.typing-focus-pane .score-heading,.typing-focus-pane .score-heading strong{color:#b0bfff}
+.typing-focus-pane .score-heading strong small{color:#879bbb}
+.typing-focus-pane .assessment-result>p,.typing-focus-pane .assessment-result li{color:#b4c3de}
+.typing-focus-pane .score-breakdown{border-color:#36425b}
+.typing-focus-pane .score-breakdown span,.typing-focus-pane .assessment-result>small{color:#93a8ca}
+.typing-focus-pane .score-breakdown b,.typing-focus-pane .assessment-result section h3{color:#c7d7f5}
+@media(max-width:650px){.typing-focus-pane .canvas-tools{padding:12px 16px}.typing-focus-label{font-size:9px;gap:7px;letter-spacing:1px}.typing-focus-label i{margin:0 1px}.study-body .typing-focus-pane .practice-title,.typing-focus-pane .response-practice{width:calc(100% - 40px)}.study-body .typing-focus-pane .practice-title{margin-top:28px;margin-bottom:26px}.study-body .typing-focus-pane .practice-title h2{font-size:21px}.study-body .typing-focus-pane .guided-editor .typing-ghost,.study-body .typing-focus-pane .guided-editor .recall-input{font-size:17px;line-height:1.95}.typing-focus-pane .submit-row{align-items:stretch}.typing-focus-pane .submit-row .primary{width:100%}}

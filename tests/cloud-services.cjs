@@ -1,0 +1,102 @@
+const assert=require('node:assert/strict');
+process.env.NEXT_PUBLIC_SUPABASE_URL='https://test.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY='sb_publishable_test';
+let calls=[],handler;
+global.fetch=async(input,options={})=>{const url=new URL(typeof input==='string'?input:input.url);const call={path:url.pathname,query:url.search,method:options.method||'GET',body:typeof options.body==='string'?JSON.parse(options.body):options.body};calls.push(call);return handler(call)};
+const {browserSupabase}=require('../.test-build/lib/supabase/browser.js');
+const cloud=require('../.test-build/lib/cloud.js');
+browserSupabase().auth.getUser=async()=>({data:{user:{id:'user-one'}},error:null});
+const draft={title:'Physics notes',blocks:[{kind:'body',text:'Keep these EXACT phrases.'}]};
+const base={id:'document-one',owner_id:'user-one',workspace_id:'workspace-one',title:draft.title,filename:'lecture.pdf',file_path:null,revision:0,updated_at:'2026-10-17T00:00:00Z',content:{draft}};
+const reply=(value,status=200)=>new Response(value===null?null:JSON.stringify(value),{status,headers:{'Content-Type':'application/json'}});
+(async()=>{
+ handler=call=>{
+  if(call.path==='/rest/v1/documents'&&call.method==='POST')return reply({...base,content:call.body.content});
+  if(call.path.startsWith('/storage/v1/object/')&&call.method==='POST')return reply({Key:'documents/path'});
+  if(call.path==='/rest/v1/documents'&&call.method==='PATCH')return reply({...base,file_path:call.body.file_path});
+  throw new Error('Unexpected '+call.method+' '+call.path);
+ };
+ const file=new File(['original PDF bytes'],'lecture.pdf',{type:'application/pdf'});
+ const created=await cloud.createDocument('workspace-one',file,draft,file.name);
+ assert.equal(created.file_path,'user-one/workspace-one/document-one/source.pdf');
+ const insertion=calls.find(call=>call.method==='POST'&&call.path==='/rest/v1/documents');
+ assert.equal(insertion.body.owner_id,'user-one');assert.equal(insertion.body.workspace_id,'workspace-one');
+ assert.deepEqual(insertion.body.content.draft,draft);
+ assert.deepEqual(insertion.body.content.originalBlocks,['Keep these EXACT phrases.']);
+ assert(calls.some(call=>call.path==='/storage/v1/object/documents/user-one/workspace-one/document-one/source.pdf'));
+ calls=[];
+ handler=call=>{
+  if(call.method==='POST'&&call.path==='/rest/v1/documents')return reply(base);
+  if(call.path.startsWith('/storage/')&&call.method==='POST')return reply({message:'Upload failed'},400);
+  if(call.method==='DELETE'&&call.path==='/rest/v1/documents')return reply(null,204);
+  throw new Error('Unexpected '+call.method+' '+call.path);
+ };
+ await assert.rejects(cloud.createDocument('workspace-one',file,draft,file.name));
+ assert.equal(calls.at(-1).method,'DELETE');assert(calls.at(-1).query.includes('document-one'));
+ calls=[];
+ handler=call=>{
+  if(call.method==='POST'&&call.path==='/rest/v1/documents')return reply(base);
+  if(call.path.startsWith('/storage/')&&call.method==='POST')return reply({Key:'file'});
+  if(call.method==='PATCH')return reply({message:'finalization failed'},400);
+  if(call.path==='/storage/v1/object/documents'&&call.method==='DELETE')return reply([]);
+  if(call.path==='/rest/v1/documents'&&call.method==='DELETE')return reply(null,204);
+  throw new Error('Unexpected '+call.method+' '+call.path);
+ };
+ await assert.rejects(cloud.createDocument('workspace-one',file,draft,file.name),/finalized/);
+ const deletes=calls.filter(call=>call.method==='DELETE');assert(deletes[0].path.startsWith('/storage/'));assert(deletes[1].path.startsWith('/rest/'));
+ calls=[];
+ handler=call=>reply([]);
+ await assert.rejects(cloud.saveDocument(base,{draft}),/another tab/);
+ assert(calls[0].query.includes('revision=eq.0'));assert.equal(calls[0].body.revision,1);
+ handler=call=>reply({...base,...call.body});
+ const saved=await cloud.saveDocument(base,{draft});assert.equal(saved.revision,1);assert.deepEqual(saved.content.draft,draft);
+ calls=[];
+ handler=call=>call.path.startsWith('/rest/')?reply({...base,file_path:'user-one/workspace-one/document-one/source.pdf'}):new Response('original PDF bytes',{headers:{'Content-Type':'application/pdf'}});
+ const opened=await cloud.openDocument(base.id);assert(opened.preview.startsWith('blob:'));URL.revokeObjectURL(opened.preview);
+ assert(calls[1].path.includes('/storage/v1/object/documents/user-one/'));
+ assert(!calls[1].path.includes('/public/'));
+
+ const stored={...base,file_path:'user-one/workspace-one/document-one/source.pdf'};
+ function deletionHandler({record=stored,files=[{id:'file-one',name:'source.pdf'}],fileFails=false,listFails=false,rowFails=false,conflict=false}={}){
+  let reads=0;
+  return call=>{
+   if(call.path==='/rest/v1/documents'&&call.method==='GET'){reads++;return reply(record||[])}
+   if(call.path==='/storage/v1/object/list/documents')return listFails?reply({message:'Cannot list'},400):reply(files);
+   if(call.path==='/storage/v1/object/documents'&&call.method==='DELETE')return fileFails?reply({message:'Cannot remove'},400):reply([]);
+   if(call.path==='/rest/v1/documents'&&call.method==='DELETE')return rowFails?reply({message:'Cannot delete row'},400):reply(conflict?[]:{id:base.id});
+   throw new Error('Unexpected deletion request '+call.method+' '+call.path);
+  };
+ }
+ calls=[];handler=deletionHandler();
+ await cloud.deleteDocument(base);
+ const removalCalls=calls.filter(call=>call.method==='DELETE');
+ assert.equal(removalCalls[0].path,'/storage/v1/object/documents');
+ assert.deepEqual(removalCalls[0].body.prefixes,[stored.file_path]);
+ assert.equal(removalCalls[1].path,'/rest/v1/documents');
+ assert(removalCalls[1].query.includes('revision=eq.0'));
+ calls=[];handler=deletionHandler({record:base,files:[]});
+ await cloud.deleteDocument(base);
+ assert.equal(calls.filter(call=>call.method==='DELETE').length,1,'Sample notes only delete their database row');
+ calls=[];handler=deletionHandler({record:base});
+ await cloud.deleteDocument(base);
+ assert(calls.some(call=>call.path==='/storage/v1/object/documents'&&call.method==='DELETE'),'Orphaned original files are also cleaned');
+ calls=[];handler=deletionHandler({fileFails:true});
+ await assert.rejects(cloud.deleteDocument(base),/saved document was kept/);
+ assert(!calls.some(call=>call.path==='/rest/v1/documents'&&call.method==='DELETE'),'Storage failure must keep the owning row');
+ calls=[];handler=deletionHandler({listFails:true});
+ await assert.rejects(cloud.deleteDocument(base),/Nothing was deleted/);
+ assert(!calls.some(call=>call.method==='DELETE'));
+ calls=[];handler=deletionHandler({rowFails:true});
+ await assert.rejects(cloud.deleteDocument(base),/database record could not be deleted/);
+ calls=[];handler=deletionHandler({record:{...stored,revision:1}});
+ await assert.rejects(cloud.deleteDocument(base),/changed in another tab/);
+ assert.equal(calls.length,1,'Stale confirmation must not delete any files');
+ calls=[];handler=deletionHandler({record:{...stored,file_path:'another-user/workspace-one/document-one/source.pdf'}});
+ await assert.rejects(cloud.deleteDocument(base),/does not match this document/);
+ assert.equal(calls.length,1,'Never delete outside the authoritative document directory');
+ calls=[];handler=deletionHandler({record:null});await cloud.deleteDocument(base);assert.equal(calls.length,1,'Deleting an already-removed document is idempotent');
+ calls=[];handler=deletionHandler({conflict:true});
+ await assert.rejects(cloud.deleteDocument(base),/changed while deleting/);
+ console.log('Passed document deletion ordering, original and orphan file cleanup, sample notes, failure retention, ownership paths, revision conflicts, and idempotent retry checks.');
+ console.log('Passed cloud upload paths, exact content persistence, rollback ordering, conflict protection, and authenticated file loading checks.');
+})().catch(error=>{console.error(error);process.exitCode=1});
