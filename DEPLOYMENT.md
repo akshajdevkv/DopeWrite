@@ -136,6 +136,7 @@ The project uses Next.js `proxy.ts`. Next's default proxy body buffer is 10 MB, 
 
 ```js
 const nextConfig = {
+  output: 'standalone',
   experimental: {
     proxyClientMaxBodySize: '20mb',
   },
@@ -154,6 +155,8 @@ set -a
 set +a
 npm ci
 npm run build
+cp -R public .next/standalone/public
+cp -R .next/static .next/standalone/.next/static
 python3 -m venv backend/.venv
 backend/.venv/bin/python -m pip install -r backend/requirements.txt
 ```
@@ -206,7 +209,9 @@ User=dopewrite
 Group=dopewrite
 WorkingDirectory=/opt/dopewrite/app
 EnvironmentFile=/etc/dopewrite/frontend.env
-ExecStart=/usr/bin/npm run start -- --hostname 127.0.0.1 --port 3000
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/node .next/standalone/server.js
 Restart=on-failure
 RestartSec=5
 
@@ -214,7 +219,7 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Check `command -v npm` and adjust the frontend `ExecStart` if necessary. Ensure Node is on the service's PATH; interactive shell/version-manager initialization does not automatically run under systemd. The service user must be able to write Next.js runtime caches. Do not use `next dev` or Uvicorn `--reload` in production.
+Check `command -v node` and adjust the frontend `ExecStart` if necessary. Interactive shell/version-manager initialization does not automatically run under systemd. The service user must be able to write Next.js runtime caches. The standalone output needs the copied public/static assets shown above. Do not use `next dev` or Uvicorn `--reload` in production.
 
 ```sh
 sudo systemctl daemon-reload

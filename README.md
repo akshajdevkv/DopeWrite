@@ -4,6 +4,8 @@ For production hosting, environment variables, Supabase, OCR, and ₹99 payment 
 
 After deployment, follow the [test-to-live payments checklist](docs/GO_LIVE_CHECKLIST.md) before accepting real customers.
 
+For two-service Docker hosting, use the [Railway / Render deployment instructions](docs/RAILWAY_RENDER_DEPLOYMENT.md).
+
 Supabase Auth, PostgreSQL and private Storage now provide account-based folder workspaces and saved documents. See [Supabase setup](supabase/README.md) before enabling cloud mode.
 
 A Next.js + FastAPI study workspace inspired by the supplied blue-sidebar wireframes. Upload a PDF or PPTX, write a full response and submit it for an overall correctness assessment, then hide the passage and recall its ideas in your own words.
