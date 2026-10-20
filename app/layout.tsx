@@ -2,6 +2,7 @@ import './globals.css';
 import './polish.css';
 import './cloud.css';
 import './landing.css';
+import './landing-shine.css';
 import './study-canvas.css';
 import './typing-focus.css';
 export const metadata = { title: 'DopeWrite — Make knowledge stick', description: 'Turn your documents into typing practice and active recall.' };

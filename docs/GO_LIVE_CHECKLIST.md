@@ -110,6 +110,8 @@ FRONTEND_ORIGIN=https://dopewrite.example
 
 Keep its Supabase credentials, Groq settings, and OCR configuration unchanged. FastAPI checks purchase records through Supabase and does not need the Dodo API key, webhook signing secret, or Supabase service-role key.
 
+If a paid customer sees **“A confirmed live purchase is required.”** from a study API, older backend versions return this before querying purchases when `NODE_ENV=production` and `DODO_PAYMENTS_ENVIRONMENT` is missing or set to `test_mode`. Set the backend environment to `live_mode`, match its product ID to the frontend's live product, and redeploy the backend. Do not ask the customer to pay again or change `NODE_ENV` to bypass verification. Updated backends identify this as `BACKEND_PAYMENT_ENVIRONMENT_MISMATCH` (HTTP 503).
+
 ### Supabase billing access configuration
 
 In the **production project's SQL Editor**, replace the placeholder with the same live product ID used by both services, then run:

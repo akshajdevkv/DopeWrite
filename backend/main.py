@@ -8,7 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from backend.auth import verify_request
+from backend.auth import verify_request, project_host
 from pptx import Presentation
 from backend.topics import Lesson, organize, build_lesson, source_blocks, local_plan
 from backend.pdf_text import extract_pdf, tesseract_command
@@ -59,7 +59,7 @@ def create_lesson(source: str, title: str) -> Lesson:
 
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'provider': 'groq' if os.getenv('GROQ_API_KEY') else 'local', 'extraction_configured': True, 'ocr_configured': bool(tesseract_command()), 'verbatim': True}
+    return {'status': 'ok', 'provider': 'groq' if os.getenv('GROQ_API_KEY') else 'local', 'extraction_configured': True, 'ocr_configured': bool(tesseract_command()), 'verbatim': True, 'supabase_project_host': project_host()}
 
 
 @app.post('/api/extract', response_model=Lesson)

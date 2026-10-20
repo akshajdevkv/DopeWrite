@@ -1,4 +1,6 @@
 import os
+import base64
+import json
 import unittest
 from unittest.mock import AsyncMock,patch
 import httpx
@@ -21,6 +23,37 @@ class SupabaseAuthTests(unittest.TestCase):
         with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=result):
             response=self.client.post('/api/review',headers={'Authorization':'Bearer invalid-token'},json={})
         self.assertEqual(response.status_code,401)
+        self.assertEqual(response.json()['code'],'BACKEND_SESSION_REJECTED')
+        self.assertNotIn('expired',response.json()['detail'])
+
+    def test_rejected_api_key_is_not_reported_as_expired(self):
+        with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=httpx.Response(401,json={'message':'Invalid API key','hint':'private-provider-payload'})) as provider:
+            response=self.client.post('/api/review',headers={'Authorization':'Bearer invalid-token'},json={})
+        self.assertEqual(response.status_code,503)
+        self.assertEqual(response.json()['code'],'BACKEND_SUPABASE_KEY_INVALID')
+        self.assertNotIn('private-provider',response.text)
+        self.assertEqual(provider.call_count,1)
+
+    def test_actual_expired_token_remains_unauthorized(self):
+        with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=httpx.Response(403,json={'code':'jwt_expired','msg':'JWT expired'})):
+            response=self.client.post('/api/review',headers={'Authorization':'Bearer expired-token'},json={})
+        self.assertEqual(response.status_code,401)
+        self.assertEqual(response.json()['code'],'SESSION_EXPIRED')
+
+    def test_different_project_explains_rejection_without_granting_access(self):
+        payload=base64.urlsafe_b64encode(json.dumps({'iss':'https://other.supabase.co/auth/v1'}).encode()).decode().rstrip('=')
+        with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=httpx.Response(401,json={'msg':'invalid JWT'})) as provider:
+            response=self.client.post('/api/review',headers={'Authorization':'Bearer header.'+payload+'.signature'},json={})
+        self.assertEqual(response.status_code,503)
+        self.assertEqual(response.json()['code'],'BACKEND_SUPABASE_PROJECT_MISMATCH')
+        self.assertEqual(provider.call_count,1)
+
+    def test_custom_domain_is_not_assumed_to_be_a_different_project(self):
+        payload=base64.urlsafe_b64encode(json.dumps({'iss':'https://auth.example.com/auth/v1'}).encode()).decode().rstrip('=')
+        with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=httpx.Response(401,json={'msg':'invalid JWT'})):
+            response=self.client.post('/api/review',headers={'Authorization':'Bearer header.'+payload+'.signature'},json={})
+        self.assertEqual(response.status_code,401)
+        self.assertEqual(response.json()['code'],'BACKEND_SESSION_REJECTED')
 
     def test_validated_user_can_process_document(self):
         result=httpx.Response(200,json={'id':'user-one'},request=httpx.Request('GET','https://project.supabase.co/auth/v1/user'))
@@ -47,8 +80,16 @@ class SupabaseAuthTests(unittest.TestCase):
     def test_test_purchase_cannot_unlock_production(self):
         with patch.dict(os.environ,{'NODE_ENV':'production'}),patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,return_value=httpx.Response(200,json={'id':'user-one'})) as provider:
             response=self.client.post('/api/review',headers={'Authorization':'Bearer valid-token'},json={})
-        self.assertEqual(response.status_code,402)
+        self.assertEqual(response.status_code,503)
+        self.assertEqual(response.json()['code'],'BACKEND_PAYMENT_ENVIRONMENT_MISMATCH')
         self.assertEqual(provider.call_count,1)
+
+    def test_live_purchase_unlocks_production(self):
+        with patch.dict(os.environ,{'NODE_ENV':'production','DODO_PAYMENTS_ENVIRONMENT':'live_mode','DODO_PAYMENTS_PRODUCT_ID':'pdt_live'}),patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,side_effect=[httpx.Response(200,json={'id':'user-one'}),httpx.Response(200,json=[{'payment_id':'pay_live'}])]) as provider:
+            response=self.client.post('/api/review',headers={'Authorization':'Bearer valid-token'},json={'title':'Notes','blocks':[{'kind':'body','text':'Active recall strengthens memory.'}]})
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(provider.call_args.kwargs['params']['environment'],'eq.live_mode')
+        self.assertEqual(provider.call_args.kwargs['params']['product_ids'],'cs.{pdt_live}')
 
     def test_auth_service_failure_does_not_allow_processing(self):
         with patch('backend.auth.httpx.AsyncClient.get',new_callable=AsyncMock,side_effect=httpx.ConnectError('offline')):

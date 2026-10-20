@@ -1,12 +1,52 @@
 """Verify Supabase sessions when cloud authentication is configured."""
 import os
 import logging
+import base64
+import json
 from urllib.parse import urlsplit
 import httpx
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
+
+
+def project_host():
+    """Public project hostname only; never expose keys or URL credentials."""
+    try:
+        return urlsplit(os.getenv('SUPABASE_URL') or os.getenv('NEXT_PUBLIC_SUPABASE_URL') or '').hostname
+    except ValueError:
+        return None
+
+
+def rejected_identity(response, authorization, host):
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+    payload = payload if isinstance(payload, dict) else {}
+    message = str(payload.get('message') or payload.get('msg') or '').lower()
+    if 'invalid api key' in message or 'no api key found' in message:
+        return unavailable('backend_configuration', 'BACKEND_SUPABASE_KEY_INVALID', 'Backend Supabase API key was rejected. Set SUPABASE_PUBLISHABLE_KEY to the publishable key from the same project as the frontend, then redeploy the backend.', response.status_code)
+    # Unverified claims are used only to explain an already rejected request.
+    # They never establish identity or grant access. Restrict this diagnostic to
+    # standard Supabase domains so custom auth domains are not misclassified.
+    try:
+        token = authorization[7:]
+        if len(token) <= 16000:
+            part = token.split('.')[1]
+            claims = json.loads(base64.urlsafe_b64decode(part + '=' * (-len(part) % 4)))
+            issuer = urlsplit(claims.get('iss', '')).hostname
+            if host and issuer and host.endswith('.supabase.co') and issuer.endswith('.supabase.co') and host != issuer:
+                return unavailable('backend_configuration', 'BACKEND_SUPABASE_PROJECT_MISMATCH', 'Frontend and backend use different Supabase projects. Set backend SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY to the same project used by the frontend, then redeploy.', response.status_code)
+    except (ValueError, TypeError, IndexError, AttributeError):
+        pass
+    expired = payload.get('code') == 'jwt_expired' or 'expired' in message
+    return JSONResponse({
+        'detail': 'Your session expired. Sign in again.' if expired else 'Backend could not verify your session. If signing in again does not help, check that both services use the same Supabase project and matching publishable key.',
+        'code': 'SESSION_EXPIRED' if expired else 'BACKEND_SESSION_REJECTED',
+        'stage': 'backend_identity',
+    }, status_code=401)
 
 
 def unavailable(stage, code, detail, provider_status=None):
@@ -34,7 +74,7 @@ async def verify_request(request: Request, call_next):
         async with httpx.AsyncClient(timeout=12) as client:
             response = await client.get(url.rstrip('/') + '/auth/v1/user', headers={'apikey': key, 'Authorization': authorization})
         if response.status_code in (401, 403):
-            return JSONResponse({'detail': 'Your session expired. Sign in again.'}, status_code=401)
+            return rejected_identity(response, authorization, parsed.hostname)
         if response.status_code != 200:
             return unavailable(stage, 'BACKEND_AUTH_PROVIDER_ERROR', f'Backend Supabase authentication returned HTTP {response.status_code}. Check SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY on the backend service.', response.status_code)
         identity = response.json()
@@ -47,7 +87,7 @@ async def verify_request(request: Request, call_next):
         if environment not in ('test_mode', 'live_mode') or not product_id:
             return JSONResponse({'detail': 'Payment access is not configured.'}, status_code=503)
         if os.getenv('NODE_ENV') == 'production' and environment != 'live_mode':
-            return JSONResponse({'detail': 'A confirmed live purchase is required.'}, status_code=402)
+            return unavailable('backend_configuration', 'BACKEND_PAYMENT_ENVIRONMENT_MISMATCH', 'Backend payment verification is configured for test mode in production. Set DODO_PAYMENTS_ENVIRONMENT=live_mode and DODO_PAYMENTS_PRODUCT_ID to the same live product ID as the frontend, then redeploy the backend.')
         async with httpx.AsyncClient(timeout=12) as client:
             purchase = await client.get(url.rstrip('/') + '/rest/v1/dodo_payments',
                 headers={'apikey': key, 'Authorization': authorization},
