@@ -1,0 +1,49 @@
+/* Stripe-inspired workspace chrome: luminous edges, clear hierarchy, quiet content. */
+.shell>aside{background:radial-gradient(ellipse at 0 0,#e6e2ff 0,transparent 48%),radial-gradient(ellipse at 100% 95%,#dff5fc 0,transparent 50%),linear-gradient(165deg,#f8f7ff,#f1f4fc 65%,#edf4fa);color:#344361;border-right:1px solid #dce3f2;box-shadow:inset -1px 0 0 #fff,5px 0 25px #263d7105}
+.shell>aside::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#9b8eff,#635bff 42%,#6ad6f0);pointer-events:none}
+.shell>aside .brand{color:#172e4a;text-shadow:none;gap:10px;letter-spacing:-1.2px}.shell>aside .brand>span{font-size:21px}.shell>aside .brand{font-size:35px}.shell>aside .brand-dot{color:#635bff}
+.shell>aside .workspace-label{color:#8190a8;font-size:9px;letter-spacing:1.7px;font-weight:650;margin-top:46px}
+.shell>aside nav button{color:#556581;justify-content:flex-start;text-align:left;font-size:12px;padding:13px 14px;min-height:44px;gap:11px;border:1px solid transparent;border-radius:10px}
+.shell>aside nav button svg{flex-shrink:0;color:#8a92b2}.shell>aside nav button:hover:not(:disabled){background:#ffffffb0;border-color:#e1e5f4;color:#5349c7}
+.shell>aside nav button.active{position:relative;background:linear-gradient(110deg,#ffffffed,#f0edff);border-color:#d8d2fc;color:#5145c5;box-shadow:0 3px 10px #635bff09,inset 0 1px 0 #fff;font-weight:650}
+.shell>aside nav button.active::before{content:'';position:absolute;left:-1px;top:12px;bottom:12px;width:3px;border-radius:4px;background:linear-gradient(#9d86ff,#635bff)}
+.shell>aside nav button.active svg{color:#7364df}.shell>aside .nav-dot{background:#8d7feb;width:5px;height:5px;flex-shrink:0}
+.shell .folder-nav-heading{color:#8190a8;font-size:9px;font-weight:650;letter-spacing:1.6px;margin-top:32px}
+.shell .folder-nav-heading button{background:#ffffffb0;border:1px solid #dce2f3;box-shadow:inset 0 1px 0 #fff;color:#7365d5;border-radius:8px}.shell .folder-nav-heading button:hover:not(:disabled){border-color:#baaff1;background:#fff}
+.shell .folder-nav{gap:6px;scrollbar-color:#c8cee5 transparent;padding-bottom:12px}
+.shell .folder-nav button{color:#5f6e88;padding:11px 13px;min-height:40px;border-radius:9px;font-size:12px;gap:10px;transition:background .18s,border-color .18s,box-shadow .18s}
+.shell .folder-nav button>svg{color:#9b95b7}.shell .folder-nav button:hover:not(:disabled){background:#ffffffb5;color:#5145c5}
+.shell .folder-nav button.selected{background:linear-gradient(115deg,#fff,#eeeaff);border-color:#d9d4f5;color:#5145b8;box-shadow:0 2px 7px #5042a308,inset 0 1px 0 #fff}.shell .folder-nav button.selected>svg{color:#8a70d6}
+.library-shell .library-user{margin-top:auto;padding-top:20px;border-top:1px solid #dce1ef;color:#40536f}.library-user small{color:#8692a9}.library-user>button{color:#8490a8;border-radius:7px}.library-user>button:hover:not(:disabled){background:#fff;color:#635bff}
+.shell>aside .avatar{background:linear-gradient(135deg,#fff,#e6e0ff);border:1px solid #d1c9f1;color:#7d6dc4;box-shadow:inset 0 1px 0 #fff}
+.shell>aside .profile{border-color:#dce1ef;color:#455a76}.shell>aside .profile small{color:#8a96ad}.shell>aside .online{background:#6fc8af;box-shadow:0 0 0 3px #71c6a710}
+.shell>aside .sidebar-note{color:#7183a2}.shell>aside .note-icon{color:#8c77d2;background:linear-gradient(135deg,#fff,#ebe6ff);border-color:#e0d9f4;box-shadow:inset 0 1px 0 #fff}.shell>aside .sidebar-note h3{color:#42516e;font-size:18px}.shell>aside .sidebar-note p{color:#8490a6}.shell>aside .note-lines i{background:#d9dcef}.shell>aside .note-lines i:first-child{background:#a595e5}
+.library-shell>main{background:radial-gradient(ellipse at 95% 0,#eeeaff80,transparent 38%),linear-gradient(135deg,#fbfcff,#f6f9fd)}
+.library-shell main>header{background:linear-gradient(110deg,#ffffffd9,#f4f3ffb8);border-bottom:1px solid #e4e7f3;box-shadow:0 1px 0 #fff;backdrop-filter:blur(18px)}
+.library-location{color:#63738f;font-weight:550}.private-pill{padding:6px 10px;border:1px solid #e5e5f5;background:#ffffffa8;border-radius:100px;color:#7b85a0}
+.library-heading .eyebrow{color:#8472ca}.library-heading h1{color:#1b3452;letter-spacing:-1.3px}.library-heading p{color:#72829c;line-height:1.85}
+.shell .primary{background:linear-gradient(115deg,#7667f5,#635bff 55%,#684bdc);border-color:#6957df;box-shadow:inset 0 1px 0 #ffffff65,0 5px 14px #635bff24;border-radius:10px}.shell .primary:hover:not(:disabled){background:linear-gradient(115deg,#8575ff,#6a60ff 55%,#7151e7);box-shadow:0 7px 20px #635bff30,inset 0 1px 0 #ffffff60}
+.library-empty{border:1px solid #e1e5f3;background:radial-gradient(ellipse at 50% 0,#efedff80,transparent 65%),linear-gradient(140deg,#ffffffed,#f9fbff);box-shadow:0 10px 35px #394c7a05,inset 0 1px 0 #fff;border-radius:20px}
+.library-empty>svg{color:#a49acb;background:linear-gradient(135deg,#fff,#efecff);border:1px solid #e5dff6;box-sizing:content-box;padding:16px;border-radius:16px;box-shadow:0 5px 16px #635bff08}.library-empty h3{color:#485f80}.library-empty p{color:#8b9ab1}
+.document-tile{background:linear-gradient(140deg,#fff,#f9faff);border-color:#e1e6f2;box-shadow:0 3px 13px #253c6505,inset 0 1px 0 #fff}.document-tile:hover:not(:disabled){border-color:#c2b7ee;box-shadow:0 12px 25px #635bff10}.document-tile-icon{background:linear-gradient(135deg,#f6f4ff,#e6dfff);color:#9380ca;border-color:#dfd7f2}
+.study-shell main>header{background:linear-gradient(110deg,#ffffffed,#f4f2ffbd);border-bottom-color:#e3e3f3}.study-header-title{color:#243e5c;font-weight:750;letter-spacing:-.7px}
+@media(max-width:650px){.shell>aside .workspace-label{margin-top:20px}.shell>aside nav button{font-size:12px}.shell .folder-nav-heading{margin-top:18px}.shell .folder-nav{padding-bottom:0}.shell .folder-nav button{font-size:11px}.shell>aside .brand>span{font-size:21px}.library-empty{padding:40px 20px}.private-pill{font-size:9px;padding:5px 8px}}
+@media(prefers-reduced-motion:reduce){.shell .folder-nav button{transition:none}}
+
+/* Shared, persistent navigation collapse for the library and study views. */
+.sidebar-collapse-toggle{position:fixed;top:13px;left:199px;z-index:21;display:grid;place-items:center;width:27px;height:27px;border-radius:7px;border:1px solid #d9dcef;background:#ffffffbc;color:#7b78a0;box-shadow:0 2px 5px #293b6005}
+.sidebar-collapse-toggle:hover{background:#fff;color:#635bff;border-color:#bcb3ed}
+.shell.sidebar-collapsed>aside{width:72px;padding:53px 11px 18px}
+.shell.sidebar-collapsed>main{margin-left:72px;width:calc(100% - 72px)}
+.sidebar-collapsed>.sidebar-collapse-toggle{left:23px}
+.shell.sidebar-collapsed>aside .brand{justify-content:center;gap:0;font-size:32px;margin:0 0 28px}
+.sidebar-collapsed>aside .brand>span,.sidebar-collapsed .workspace-label,.sidebar-collapsed .sidebar-text,.sidebar-collapsed .nav-dot,.sidebar-collapsed .sidebar-note,.sidebar-collapsed .folder-nav-heading>span,.sidebar-collapsed .folder-nav button>span,.sidebar-collapsed .library-user>span,.sidebar-collapsed .profile>div:not(.avatar),.sidebar-collapsed .profile>.online{display:none}
+.shell.sidebar-collapsed>aside nav{display:grid;gap:8px;margin-top:0}
+.shell.sidebar-collapsed>aside nav button{justify-content:center;padding:11px;gap:0;min-height:42px}
+.sidebar-collapsed .folder-nav-heading{justify-content:center;margin:24px 0 10px}
+.sidebar-collapsed .folder-nav{display:grid;gap:6px;overflow-x:hidden;max-height:40vh}
+.shell.sidebar-collapsed .folder-nav button{justify-content:center;padding:11px;min-width:0}
+.sidebar-collapsed .library-user{flex-direction:column;gap:12px}.sidebar-collapsed .library-user>.avatar{width:30px;height:30px}.sidebar-collapsed .profile{margin-top:auto;justify-content:center;padding:18px 0 0}
+.typing-focus-shell>.sidebar-collapse-toggle{display:none}
+@media(max-width:1050px) and (min-width:651px){.sidebar-collapse-toggle{left:158px}.sidebar-collapsed>.sidebar-collapse-toggle{left:23px}}
+@media(max-width:650px){.sidebar-collapse-toggle,.sidebar-collapsed>.sidebar-collapse-toggle{position:absolute;left:auto;right:20px;top:20px}.shell.sidebar-collapsed>aside{width:100%;padding:18px 20px;min-height:70px}.shell.sidebar-collapsed>main{margin-left:0;width:100%}.shell.sidebar-collapsed>aside .brand{justify-content:flex-start;margin:0;font-size:26px}.shell.sidebar-collapsed>aside .brand>span{display:inline}.shell.sidebar-collapsed>aside nav,.sidebar-collapsed .folder-nav,.sidebar-collapsed .folder-nav-heading{display:none}}
